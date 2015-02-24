@@ -1,0 +1,214 @@
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <cmath>/*for fabs()*/
+//#include "customMatrix1.h"
+using namespace std;
+/*
+#include "tnt.h"
+#include "jama_lu.h"
+using namespace TNT;
+using namespace JAMA;
+*/
+
+//global variables
+const int n = 3; //rows
+const int m = n+1; //columns
+
+void inputMatrixRows(double(&mat)[n][m])
+{
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < m; j++)
+		{
+			cin >> mat[i][j];
+		}
+	}
+}
+
+void inputMatrixColumns(double(&mat)[n][m])
+{
+	for (int i = 0; i < m; i++)
+	{
+		for (int j = 0; j < n; j++)
+		{
+			cin >> mat[j][i];
+		}
+	}
+}
+
+void printMatrix(double(&mat)[n][m])
+{
+	cout << setprecision(1) << fixed;
+	for (int i = 0; i<n; i++)    //This loops on the rows
+	{
+		for (int j = 0; j<m; j++) //This loops on the columns
+		{
+			cout << mat[i][j] << "  "; //prints a row
+		}
+		cout << endl;
+	}
+}
+
+void swapRows(double (&mat)[n][m], int rowBelow, int rowOnTop)
+{
+	double temp;
+	for (int c = 0; c < m; c++)
+	{
+		temp = mat[rowBelow][c];
+		mat[rowBelow][c] = mat[rowOnTop][c];
+		mat[rowOnTop][c] = temp;
+	}
+}
+
+
+int main()
+{   
+	double matrix[n][m] = /*{ { 4, 1, 2, 9 }, 
+							{ 7, 4, -1, -5 },
+							{ 10, 10, -3, -9 } };*/
+	  { { 4, -1, 1, 8 },
+	    { 2, 5, 2, 3 },
+	    { 1, 2, 4, 11 } };
+	/*{ { 2, -1, 0, 1 },
+		{-1, 2, -1, 0 },
+		{ 0, -1, 2, 1 }};
+*/
+	double largestCoef; //largest pivot value for a swap
+	int largestRow; //collects value of row to swap 
+	bool swap=false; //true if swapping condition met(found larger coefficient in column below pivot)
+	double multiple; //=matrix[z][i]/matrix[i][i], z != 0 used during elimination
+	/*STEP 1*/
+	for (int i = 0; i < n-1; i++)    //This loops on the columns  
+	{
+		largestRow = 0;	//stores row location of largest pivot point in column  
+		largestCoef = 0; //stores largest column value to compare with others
+		/*STEP 2*/													
+		//search column for largest value in order to know what row to swap				
+		for (int p=i; p < n; p++) //p= 0 : number of rows
+		{
+			if (fabs(matrix[p][i]) >= fabs(matrix[i][i])) //find larger coefficient in the column than current pivot
+			{
+				//check if larger than the previous large value found
+				if (fabs(matrix[p][i]) > largestCoef)
+				{
+					largestCoef = matrix[p][i]; //collects largest column value to compare to others
+					largestRow = p; //row with largest potential pivot
+					swap = true; //must swap when a larger number than current pivot is found
+					multiple = matrix[p][i] / matrix[i][i]; //where p>i
+				}
+			}
+		}//for loop 2
+
+		if (largestCoef == 0)
+		{
+			cout << "Pivot point is 0. End of algorithm" << endl;
+			exit(0);
+		}
+		/*STEP 3*/
+		//For increased numerical stability largest possible pivot is used.
+		if (swap == true && largestRow!=i) //don't swap if current pivot is largest value in column
+		{
+			swapRows(matrix, largestRow,i);
+			swap = false; //reset
+		}
+		
+		
+		if (largestRow==i) //assign row immediately below current pivot if no larger coefficient in column was found
+			largestRow = i+1; 
+		/*STEP 4*/
+		for (int z = largestRow; z < n; z++)
+		{	/*STEP 5*/
+			multiple = matrix[z][i] / matrix[i][i]; //used to multiply through row that will eliminate one below
+			/*STEP 6*/
+			for (int j = 0; j < m; j++) //This loops through a row
+			{
+				matrix[z][j] = matrix[z][j] - multiple*matrix[i][j]; //elimination/ change of coefficients
+				//printMatrix(matrix);
+			}//for loop 4
+		}//for loop 3
+
+	}//outer for, for loop 1
+
+	if (matrix[n - 1][n - 1] == 0)
+	{
+		cout << "No Solution" << endl;
+		exit(0);
+	}
+
+	double x[m-1]; //x values to be found 
+	double sum; //collects sum of product with existing x values and their coefficients
+	x[n-1] = matrix[n - 1][m - 1] / matrix[n - 1][n - 1];//value of last x (x[n-1])
+
+	for (int i = n - 2; i >= 0; i--)
+	{ //backward substitution
+		sum = 0;
+		for (int j = i + 1; j < n; j++)
+		{
+			sum += matrix[i][j] * x[j]; //sum of rest of equation when other x are plugged in
+		}
+		x[i] = (matrix[i][m - 1] - sum) / matrix[i][i];
+	}
+	cout << "FIN" << endl;
+	cout << "(x1, x2, x3) = ("<<x[0] << ", " << x[1] << ", " << x[2] << ")\n";
+
+}
+
+
+
+
+
+/*
+int main() {
+	
+	int DOF = 3;
+	Array2D<double> A(DOF, DOF, 0.0);
+	Array2D<double> B(DOF, 1, 0.0);
+	Array2D<double> X(DOF, 1, 0.0);
+	A[0][0] = 0.0;
+	A[0][1] = 1.0;
+	A[0][2] = -3.0;
+	A[1][0] = 1.0;
+	A[1][1] = -1.0;
+	A[1][2] = 1.0;
+	A[2][0] = 1.0;
+	A[2][1] = 0.0;
+	A[2][2] = -1.0;
+
+	B[0][0] = 4.0;
+	B[1][0] = 6.0;
+	B[2][0] = 2.0;
+
+	LU<double> decompA(A);
+	X = decompA.solve(B);
+	
+	cout << setprecision(1)<<fixed;
+	std::cout << "X=" << A[0][0] << ' ' << A[1][0] << ' ' << A[2][0] << '\n';
+	
+	return 0;
+}
+*/
+
+/*
+double matrix[n][m]; //creates a 3*4 matrix or a 2d array.
+//row0
+matrix[n - 3][m - 4] = 4;
+matrix[n - 3][m - 3] = -1;
+matrix[n - 3][m - 2] = 1;
+matrix[n - 3][m - 1] = 8;
+//row1
+matrix[n - 2][m - 4] = 2;
+matrix[n - 2][m - 3] = 5;
+matrix[n - 2][m - 2] = 2;
+matrix[n - 2][m - 1] = 3;
+//row2
+matrix[n - 1][m - 4] = 1;
+matrix[n - 1][m - 3] = 2;
+matrix[n - 1][m - 2] = 4;
+matrix[n - 1][m - 1] = 11;
+*/
+
+/*
+	NOTES
+The largest pivot point is used because it results in most accurate numerical output
+*/
